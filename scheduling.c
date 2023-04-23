@@ -65,7 +65,48 @@ void sch_table_free(sch_problem *sch) {
           containing the instance provided by the user
 */
 sch_problem * sch_get_scheduling_problem_instance() {
-  // TODO
+  int max_jobs = 0, res_scanf = 0;
+  while (res_scanf == 0) {
+    printf("How many jobs in the scheduling problem instance? ");
+    res_scanf = scanf("%d", &max_jobs);
+    if (!res_scanf) {
+      printf("The number of jobs must be an integer.\n");      
+      scanf("%*s"); // flush
+    }
+  }
+  printf("\n");
+
+  // Init the scheduling problem
+  sch_problem *sch = (sch_problem*) malloc(sizeof(sch_problem));
+  sch->num = max_jobs;
+  sch_table_malloc(sch);
+
+  // Read arrival and burst times
+  int arrival_time = 0, burst_time = 0;
+  if (max_jobs > 0) {
+    for(int i = 0; i < max_jobs;) {
+      printf("Job %d, arrival time: ", i);
+      res_scanf = scanf("%d", &arrival_time);
+      if (!res_scanf) {
+        printf("Arrival time must be an integer.\n");      
+        scanf("%*s"); // flush
+      } else {
+        printf("Job %d, burst time: ", i);
+        res_scanf = scanf("%d", &burst_time);
+        if (!res_scanf) {
+          printf("Burst time must be an integer.\n");      
+          scanf("%*s"); // flush
+        } else {
+          sch->table[i][TBL_ID] = i + 1;
+          sch->table[i][TBL_ARRIVAL] = arrival_time;
+          sch->table[i][TBL_BURST] = burst_time;
+          i++;
+        }
+      }
+    }
+  }
+
+  return sch;
 }
 
 /**
@@ -78,6 +119,7 @@ sch_problem * sch_get_scheduling_problem_instance() {
    @return the address of the computer scheduling solution
  */
 sch_solution * sch_fcfs(sch_problem *sch) {
+  printf("*********** FCFS\n");
   info_table("sch_fcfs",sch->num,sch->table);
 
   sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
@@ -99,6 +141,7 @@ sch_solution * sch_fcfs(sch_problem *sch) {
    @return the address of the computer scheduling solution
  */
 sch_solution * sch_sjf(sch_problem *sch) {
+  printf("*********** SJF\n");
   info_table("sch_sjf",sch->num,sch->table);
 
   sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
@@ -292,6 +335,7 @@ void execute_schedule(sch_problem *sch, sch_solution *sol, int sort_by_burst) {
     wait_time += queue_size;
     cycle++;
   }
+
   if (sch->num > 0)
     sol->wait_average = (float)wait_time / sch->num;
 }

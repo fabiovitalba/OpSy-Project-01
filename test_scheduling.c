@@ -21,12 +21,16 @@ void test1();
 void test2();
 void test3();
 
+void manualTest();
+
 
 int main() {
   test0();
   test1();
   test2();
   test3();
+
+  manualTest();
 }
 
 /*
@@ -257,4 +261,11 @@ void test3() {
   free(sch);
 }
 
-
+void manualTest() {
+  print_message("Manual test", W_ALGO);
+  sch_problem *sch = sch_get_scheduling_problem_instance();
+  sch_solution *sol_fcfs = sch_fcfs(sch);
+  print_solution(*sol_fcfs);
+  sch_solution *sol_sjf = sch_sjf(sch);
+  print_solution(*sol_sjf);
+}
