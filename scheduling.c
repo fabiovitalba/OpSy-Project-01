@@ -20,8 +20,9 @@
 
 void info_sch_problem(char *context, sch_problem *sch);
 void info_sch_solution(char *context, sch_solution *sol);
-void sort_sch_problem_arrival_time(sch_problem *sch);
+void sort_sch_problem_asc(sch_problem *sch, int sort_by);
 void sch_table_swap(sch_problem *sch, int i, int j);
+int get_no_of_jobs_waiting(int cycle, int next_job_id, sch_problem *sch);
 void sch_solution_malloc(sch_solution *sol);
 
 /**
@@ -81,10 +82,60 @@ sch_solution * sch_fcfs(sch_problem *sch) {
   sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
   sol->num = sch->num;
   sch_solution_malloc(sol);
-  info_sch_solution("sch_fcfs",sol);
+  
+  sort_sch_problem_asc(sch,TBL_ARRIVAL);
 
-  sort_sch_problem_arrival_time(sch);
-  info_sch_problem("sch_fcfs - sorted",sch);
+  int job_id = 0, cycle = 0, wait_time = 0, burst = 0;
+  while(job_id < sch->num) {
+    if (sch->table[job_id][TBL_ARRIVAL] <= cycle) {
+      if (burst == 0) {
+        // start next process
+        if (SCH_VERBOSE)
+          printf("(  %d) Running job %d, arrived at %d, with burst time %d.\n", cycle, sch->table[job_id][TBL_ID], sch->table[job_id][TBL_ARRIVAL], sch->table[job_id][TBL_BURST]);
+
+        burst = sch->table[job_id][TBL_BURST];
+        sol->order[job_id] = sch->table[job_id][TBL_ID];
+        job_id++;
+      }
+    } else {
+      // no process to start
+      if((burst == 0) && SCH_VERBOSE)
+        printf("(  %d) No job ready.\n", cycle);
+    }
+    if (burst > 0)
+      burst--;
+    wait_time += get_no_of_jobs_waiting(cycle, job_id, sch);
+    cycle++;
+  }
+  if (sch->num > 0)
+    sol->wait_average = (float)wait_time / sch->num;
+  if(SCH_DEBUG)
+    printf("wait_time: %d, avg: %f\n", wait_time, sol->wait_average);
+
+  info_sch_solution("sch_fcfs - after run",sol);
+  return sol;
+}
+
+/**
+   Compute the solution to a scheduling problem with Shortest Job
+   First scheduling. Break ties in favour of the job with lower index
+   in sch->table.
+
+   @param sch the address of the scheduling problem to solve
+
+   @return the address of the computer scheduling solution
+ */
+sch_solution * sch_sjf(sch_problem *sch) {
+  info_sch_problem("sch_sjf",sch);
+
+  sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
+  sol->num = sch->num;
+  sch_solution_malloc(sol);
+  /*
+  info_sch_solution("sch_sjf",sol);
+
+  sort_sch_problem_asc(sch,TBL_BURST);
+  info_sch_problem("sch_sjf - sorted",sch);
 
   int i = 0, cycle = 0, wait_time = 0;
   while(i < sch->num) {
@@ -113,38 +164,26 @@ sch_solution * sch_fcfs(sch_problem *sch) {
   if(SCH_DEBUG)
     printf("wait_time: %d, avg: %f\n", wait_time, (float)wait_time / sch->num);
 
-  info_sch_solution("sch_fcfs - after run",sol);
+  info_sch_solution("sch_sjf - after run",sol);
+  */
   return sol;
 }
 
 /**
-   Compute the solution to a scheduling problem with Shortest Job
-   First scheduling. Break ties in favour of the job with lower index
-   in sch->table.
+   Prints the Scheduling Problem in a Tabular manner.
 
-   @param sch the address of the scheduling problem to solve
-
-   @return the address of the computer scheduling solution
+   @param context a string representing the context from where the table is printed.
+   @param sch the address of the scheduling problem
  */
-sch_solution * sch_sjf(sch_problem *sch) {
-  // TODO
-  sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
-  sch_solution_malloc(sol);
-  info_sch_solution("sch_sjf",sol);
-  return sol;
-}
-
 void info_sch_problem(char *context, sch_problem *sch) {
   if(!SCH_DEBUG)
     return;
-  printf("%s: %p contains:\n", context, sch);
-  printf("table: %i entries\n",sch->num);
-  printf("i | ID | ARRIVAL | BURST\n");
+  printf("%s: scheduling problem:\n", context);
+  printf("| ID | ARRIVAL | BURST |\n");
   printf("------------------------\n");
   if (sch->num > 0) {
     for (int i = 0; i < sch->num; i++) {
-      printf("%i | %i  |    %i    |  %i   \n",
-        i,
+      printf("| %i  |    %i    |   %i   |\n",
         sch->table[i][TBL_ID],
         sch->table[i][TBL_ARRIVAL],
         sch->table[i][TBL_BURST]);
@@ -154,7 +193,7 @@ void info_sch_problem(char *context, sch_problem *sch) {
 }
 
 void info_sch_solution(char *context, sch_solution *sol) {
-  if(!SCH_DEBUG)
+  //if(!SCH_DEBUG)
     return;
   printf("%s: %p contains:\n", context, sol);
   printf("solution: %i entries\n",sol->num);
@@ -168,11 +207,18 @@ void info_sch_solution(char *context, sch_solution *sol) {
   printf("avg. wait: %f\n\n", sol->wait_average);
 }
 
-void sort_sch_problem_arrival_time(sch_problem *sch) {
+/**
+   Sorts the scheduling problem based on the column passed in sort_by.
+   The table is sorted in ascending, starting from the lowest value first. 
+
+   @param sch the address of the scheduling problem to be sorted
+   @param sort_by is the id of the column that is used for sorting.
+ */
+void sort_sch_problem_asc(sch_problem *sch, int sort_by) {
   if(sch->num > 0) {
     for(int i = 0; i < sch->num; i++) {
       for(int j = i; j < sch->num; j++) {
-        if(sch->table[i][TBL_ARRIVAL] > sch->table[j][TBL_ARRIVAL]) {
+        if(sch->table[i][sort_by] > sch->table[j][sort_by]) {
           sch_table_swap(sch,i,j);
         }
       }
@@ -180,10 +226,39 @@ void sort_sch_problem_arrival_time(sch_problem *sch) {
   }
 }
 
+/**
+   Swaps two table rows of a scheduling problem with eachother.
+
+   @param sch the address of the scheduling problem
+   @param i is the id of the first row to be swapped with the second row.
+   @param j is the id of the second row to be swapped with the first row.
+ */
 void sch_table_swap(sch_problem *sch, int i, int j) {
   int *temp_job = sch->table[j];
   sch->table[j] = sch->table[i];
   sch->table[i] = temp_job;
+}
+
+/**
+   Gets the number of jobs currently waiting for their resources.
+   This function returns 0 if no jobs are currently waiting. Otherwise it will
+   return 1 for each process currently waiting. (So if 3 jobs were waiting, this function
+   would return 3).
+
+   @param cycle is the current cycle number. This value is compared to the processes arrival time.
+   @param next_job_id is the ID of the next job to be executed. All jobs before this ID will be ignored.
+   @param sch the address of the scheduling problem
+
+   @return the number of jobs currently waiting for their turn.
+ */
+int get_no_of_jobs_waiting(int cycle, int next_job_id, sch_problem *sch) {
+  int jobs_waiting = 0;
+  for(int i = next_job_id; i < sch->num; i++) {
+    if (sch->table[i][TBL_ARRIVAL] <= cycle) {
+      jobs_waiting++;
+    }
+  }
+  return jobs_waiting;
 }
 
 void sch_solution_malloc(sch_solution *sol) {

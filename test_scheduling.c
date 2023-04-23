@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#define VERBOSE 0
+#define VERBOSE 1
 
 #define W_ALGO  3
 #define W_TEST  5
@@ -23,9 +23,9 @@ void test3();
 
 
 int main() {
-  //test0();
-  //test1();
-  //test2();
+  test0();
+  test1();
+  test2();
   test3();
 }
 
