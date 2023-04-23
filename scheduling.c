@@ -20,10 +20,13 @@
 
 void info_sch_problem(char *context, sch_problem *sch);
 void info_sch_solution(char *context, sch_solution *sol);
-void sort_sch_problem_asc(sch_problem *sch, int sort_by);
-void sch_table_swap(sch_problem *sch, int i, int j);
-int get_no_of_jobs_waiting(int cycle, int next_job_id, sch_problem *sch);
+void info_table(char *context, int num, int **table);
+void sort_sch_problem_asc(int num, int **table, int sort_by);
+void sch_table_swap(int **table, int i, int j);
+int get_no_of_jobs_waiting(int cycle, int next_job_id, int num, int **table);
 void sch_solution_malloc(sch_solution *sol);
+void queue_push_job(int curr_size, int **table, int *job);
+int* queue_poll_job(int curr_size, int **table);
 
 /**
   Allocate memory for the table in the scheduling problem structure sch in
@@ -83,7 +86,7 @@ sch_solution * sch_fcfs(sch_problem *sch) {
   sol->num = sch->num;
   sch_solution_malloc(sol);
   
-  sort_sch_problem_asc(sch,TBL_ARRIVAL);
+  sort_sch_problem_asc(sch->num,sch->table,TBL_ARRIVAL);
 
   int job_id = 0, cycle = 0, wait_time = 0, burst = 0;
   while(job_id < sch->num) {
@@ -104,7 +107,7 @@ sch_solution * sch_fcfs(sch_problem *sch) {
     }
     if (burst > 0)
       burst--;
-    wait_time += get_no_of_jobs_waiting(cycle, job_id, sch);
+    wait_time += get_no_of_jobs_waiting(cycle, job_id, sch->num, sch->table);
     cycle++;
   }
   if (sch->num > 0)
@@ -131,41 +134,57 @@ sch_solution * sch_sjf(sch_problem *sch) {
   sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
   sol->num = sch->num;
   sch_solution_malloc(sol);
-  /*
-  info_sch_solution("sch_sjf",sol);
-
-  sort_sch_problem_asc(sch,TBL_BURST);
-  info_sch_problem("sch_sjf - sorted",sch);
-
-  int i = 0, cycle = 0, wait_time = 0;
-  while(i < sch->num) {
-    if (sch->table[i][TBL_ARRIVAL] <= cycle) {
-      // start next process
-      if (SCH_VERBOSE)
-        printf("(  %d) Running job %d, arrived at %d, with burst time %d.\n", cycle, sch->table[i][TBL_ID], sch->table[i][TBL_ARRIVAL], sch->table[i][TBL_BURST]);
-      
-      sol->order[i] = sch->table[i][TBL_ID];
-      cycle += sch->table[i][TBL_BURST];
-      i++;
-
-      if (i < sch->num) {
-        // add wait time for next process
-        if (sch->table[i][TBL_ARRIVAL] < cycle)
-          wait_time += cycle - sch->table[i][TBL_ARRIVAL];
-      }
-    } else {
-      // no process to start
-      if(SCH_VERBOSE)
-        printf("(  %d) No job ready.\n", cycle);
-      cycle++;
-    }
+  
+  sort_sch_problem_asc(sch->num,sch->table,TBL_ARRIVAL);
+  int queue_size = 0;
+  int** queue = (int**) malloc(sizeof(int*) * sch->num);
+  for (int i = 0; i < sch->num; i++) {
+    queue[i] = (int*) malloc(sizeof(int) * 3);
   }
-  sol->wait_average = (float)wait_time / sch->num;
-  if(SCH_DEBUG)
-    printf("wait_time: %d, avg: %f\n", wait_time, (float)wait_time / sch->num);
 
-  info_sch_solution("sch_sjf - after run",sol);
-  */
+  int job_id = 0, order_id = 0, cycle = 0, wait_time = 0, burst = 0;
+  while(order_id < sch->num) {
+    while((job_id < sch->num) && (sch->table[job_id][TBL_ARRIVAL] <= cycle)) {
+      // If another job was received, we add it to the queue.
+      queue_push_job(queue_size,queue,sch->table[job_id]);
+      queue_size++;
+      job_id++;
+    }
+
+    if (burst == 0) {
+      if (queue_size > 0) {
+        // No process currently running, the next can be started.
+        // Sort the queue by burst time
+        sort_sch_problem_asc(queue_size,queue,TBL_BURST);
+
+        int* job = queue_poll_job(queue_size,queue);
+        queue_size--;
+
+        // Select the first Job in the queue to be started.
+        if (SCH_VERBOSE)
+          printf("(  %d) Running job %d, arrived at %d, with burst time %d.\n", 
+            cycle, job[TBL_ID], job[TBL_ARRIVAL], job[TBL_BURST]);
+
+        burst = job[TBL_BURST];
+        sol->order[order_id] = job[TBL_ID];
+        order_id++;
+      } else {
+        if((burst == 0) && SCH_VERBOSE)
+          printf("(  %d) No job ready.\n", cycle);
+      }
+    }
+
+    if (burst > 0)  // if a process is running, we reduce it's running time
+      burst--;
+    wait_time += queue_size;
+    cycle++;
+  }
+  if (sch->num > 0)
+    sol->wait_average = (float)wait_time / sch->num;
+  if(SCH_DEBUG)
+    printf("wait_time: %d, avg: %f\n", wait_time, sol->wait_average);
+
+  info_sch_solution("sch_fcfs - after run",sol);
   return sol;
 }
 
@@ -207,19 +226,37 @@ void info_sch_solution(char *context, sch_solution *sol) {
   printf("avg. wait: %f\n\n", sol->wait_average);
 }
 
+void info_table(char *context, int num, int **table) {
+  if(!SCH_DEBUG)
+    return;
+  printf("%s:\n", context);
+  printf("| ID | ARRIVAL | BURST |\n");
+  printf("------------------------\n");
+  if (num > 0) {
+    for (int i = 0; i < num; i++) {
+      printf("| %i  |    %i    |   %i   |\n",
+        table[i][TBL_ID],
+        table[i][TBL_ARRIVAL],
+        table[i][TBL_BURST]);
+    }
+  }
+  printf("\n");
+}
+
 /**
    Sorts the scheduling problem based on the column passed in sort_by.
    The table is sorted in ascending, starting from the lowest value first. 
 
-   @param sch the address of the scheduling problem to be sorted
+   @param num the number of processes in the parameter table.
+   @param table the table of processes to sort.
    @param sort_by is the id of the column that is used for sorting.
  */
-void sort_sch_problem_asc(sch_problem *sch, int sort_by) {
-  if(sch->num > 0) {
-    for(int i = 0; i < sch->num; i++) {
-      for(int j = i; j < sch->num; j++) {
-        if(sch->table[i][sort_by] > sch->table[j][sort_by]) {
-          sch_table_swap(sch,i,j);
+void sort_sch_problem_asc(int num, int **table, int sort_by) {
+  if(num > 0) {
+    for(int i = 0; i < num; i++) {
+      for(int j = i; j < num; j++) {
+        if(table[i][sort_by] > table[j][sort_by]) {
+          sch_table_swap(table,i,j);
         }
       }
     }
@@ -229,14 +266,14 @@ void sort_sch_problem_asc(sch_problem *sch, int sort_by) {
 /**
    Swaps two table rows of a scheduling problem with eachother.
 
-   @param sch the address of the scheduling problem
+   @param table the table of processes to swap.
    @param i is the id of the first row to be swapped with the second row.
    @param j is the id of the second row to be swapped with the first row.
  */
-void sch_table_swap(sch_problem *sch, int i, int j) {
-  int *temp_job = sch->table[j];
-  sch->table[j] = sch->table[i];
-  sch->table[i] = temp_job;
+void sch_table_swap(int **table, int i, int j) {
+  int *temp_job = table[j];
+  table[j] = table[i];
+  table[i] = temp_job;
 }
 
 /**
@@ -251,11 +288,13 @@ void sch_table_swap(sch_problem *sch, int i, int j) {
 
    @return the number of jobs currently waiting for their turn.
  */
-int get_no_of_jobs_waiting(int cycle, int next_job_id, sch_problem *sch) {
+int get_no_of_jobs_waiting(int cycle, int next_job_id, int num, int **table) {
   int jobs_waiting = 0;
-  for(int i = next_job_id; i < sch->num; i++) {
-    if (sch->table[i][TBL_ARRIVAL] <= cycle) {
-      jobs_waiting++;
+  if (next_job_id < num) {
+    for(int i = 0; i < num; i++) {
+      if (table[i][TBL_ARRIVAL] <= cycle) {
+        jobs_waiting++;
+      }
     }
   }
   return jobs_waiting;
@@ -264,4 +303,16 @@ int get_no_of_jobs_waiting(int cycle, int next_job_id, sch_problem *sch) {
 void sch_solution_malloc(sch_solution *sol) {
   sol->order = (int*) malloc(0 * sizeof(int));
   sol->wait_average = 0.0;
+}
+
+void queue_push_job(int curr_size, int **table, int *job) {
+  table[curr_size] = job;
+}
+
+int* queue_poll_job(int curr_size, int **table) {
+  int *job = table[0];
+  for(int i = 1; i < curr_size; i++) {
+    table[i-1] = table[i];
+  }
+  return job;
 }
