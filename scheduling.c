@@ -18,8 +18,6 @@
 #define TBL_ARRIVAL 1
 #define TBL_BURST 2
 
-void info_sch_problem(char *context, sch_problem *sch);
-void info_sch_solution(char *context, sch_solution *sol);
 void info_table(char *context, int num, int **table);
 void sort_sch_problem_asc(int num, int **table, int sort_by);
 void sch_table_swap(int **table, int i, int j);
@@ -80,7 +78,7 @@ sch_problem * sch_get_scheduling_problem_instance() {
    @return the address of the computer scheduling solution
  */
 sch_solution * sch_fcfs(sch_problem *sch) {
-  info_sch_problem("sch_fcfs",sch);
+  info_table("sch_fcfs",sch->num,sch->table);
 
   sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
   sol->num = sch->num;
@@ -115,7 +113,6 @@ sch_solution * sch_fcfs(sch_problem *sch) {
   if(SCH_DEBUG)
     printf("wait_time: %d, avg: %f\n", wait_time, sol->wait_average);
 
-  info_sch_solution("sch_fcfs - after run",sol);
   return sol;
 }
 
@@ -129,7 +126,7 @@ sch_solution * sch_fcfs(sch_problem *sch) {
    @return the address of the computer scheduling solution
  */
 sch_solution * sch_sjf(sch_problem *sch) {
-  info_sch_problem("sch_sjf",sch);
+  info_table("sch_sjf",sch->num,sch->table);
 
   sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
   sol->num = sch->num;
@@ -184,48 +181,16 @@ sch_solution * sch_sjf(sch_problem *sch) {
   if(SCH_DEBUG)
     printf("wait_time: %d, avg: %f\n", wait_time, sol->wait_average);
 
-  info_sch_solution("sch_fcfs - after run",sol);
   return sol;
 }
 
 /**
-   Prints the Scheduling Problem in a Tabular manner.
+   Prints the table of processes in a tabular form.
 
    @param context a string representing the context from where the table is printed.
-   @param sch the address of the scheduling problem
+   @param num is the number of processes present in the table.
+   @param table is the the table containing the processees to be displayed.
  */
-void info_sch_problem(char *context, sch_problem *sch) {
-  if(!SCH_DEBUG)
-    return;
-  printf("%s: scheduling problem:\n", context);
-  printf("| ID | ARRIVAL | BURST |\n");
-  printf("------------------------\n");
-  if (sch->num > 0) {
-    for (int i = 0; i < sch->num; i++) {
-      printf("| %i  |    %i    |   %i   |\n",
-        sch->table[i][TBL_ID],
-        sch->table[i][TBL_ARRIVAL],
-        sch->table[i][TBL_BURST]);
-    }
-  }
-  printf("\n");
-}
-
-void info_sch_solution(char *context, sch_solution *sol) {
-  //if(!SCH_DEBUG)
-    return;
-  printf("%s: %p contains:\n", context, sol);
-  printf("solution: %i entries\n",sol->num);
-  printf("order: ");
-  if (sol->num > 0) {
-    for (int i = 0; i < sol->num; i++) {
-      printf("%i ",sol->order[i]);
-    }
-    printf("\n");
-  }
-  printf("avg. wait: %f\n\n", sol->wait_average);
-}
-
 void info_table(char *context, int num, int **table) {
   if(!SCH_DEBUG)
     return;
@@ -305,10 +270,25 @@ void sch_solution_malloc(sch_solution *sol) {
   sol->wait_average = 0.0;
 }
 
+/**
+   Adds a job to the queue in parameter table.
+
+   @param curr_size is the current number of jobs stored in the queue in param table.
+   @param table is the actual queue. This contains all the processes that are waiting.
+   @param job is the job/process to be added to the queue
+ */
 void queue_push_job(int curr_size, int **table, int *job) {
   table[curr_size] = job;
 }
 
+/**
+   Returns the oldest job from the queue in param table. All other jobs are moved up one position.
+
+   @param curr_size is the current number of jobs stored in the queue in param table.
+   @param table is the actual queue. This contains all the processes that are waiting.
+   
+   @return the oldest job that was added to the queue
+ */
 int* queue_poll_job(int curr_size, int **table) {
   int *job = table[0];
   for(int i = 1; i < curr_size; i++) {
