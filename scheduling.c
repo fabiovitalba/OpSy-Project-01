@@ -12,10 +12,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// TODO: define constants if needed
+#define SCH_DEBUG 1
+#define SCH_VERBOSE 1
+#define TBL_ID 0
+#define TBL_ARRIVAL 1
+#define TBL_BURST 2
 
 void info_sch_problem(char *context, sch_problem *sch);
 void info_sch_solution(char *context, sch_solution *sol);
+void sort_sch_problem_arrival_time(sch_problem *sch);
+void sch_table_swap(sch_problem *sch, int i, int j);
 void sch_solution_malloc(sch_solution *sol);
 
 /**
@@ -35,7 +41,6 @@ void sch_table_malloc(sch_problem *sch) {
   for (int i = 0; i < sch->num; i++) {
     sch->table[i] = (int*)malloc(sizeof(int) * 3);
   }
-  info_sch_problem("sch_table_malloc",sch);
 }
 
 /**
@@ -45,7 +50,6 @@ void sch_table_malloc(sch_problem *sch) {
   @param sch the address of the scheduling problem
 */
 void sch_table_free(sch_problem *sch) {
-  info_sch_problem("sch_table_free",sch);
   for(int i = 0; i < sch->num; i++) {
     free(sch->table[i]);
   }
@@ -72,10 +76,44 @@ sch_problem * sch_get_scheduling_problem_instance() {
    @return the address of the computer scheduling solution
  */
 sch_solution * sch_fcfs(sch_problem *sch) {
-  // TODO
+  info_sch_problem("sch_fcfs",sch);
+
   sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
+  sol->num = sch->num;
   sch_solution_malloc(sol);
   info_sch_solution("sch_fcfs",sol);
+
+  sort_sch_problem_arrival_time(sch);
+  info_sch_problem("sch_fcfs - sorted",sch);
+
+  int i = 0, cycle = 0, wait_time = 0;
+  while(i < sch->num) {
+    if (sch->table[i][TBL_ARRIVAL] <= cycle) {
+      // start next process
+      if (SCH_VERBOSE)
+        printf("(  %d) Running job %d, arrived at %d, with burst time %d.\n", cycle, sch->table[i][TBL_ID], sch->table[i][TBL_ARRIVAL], sch->table[i][TBL_BURST]);
+      
+      sol->order[i] = sch->table[i][TBL_ID];
+      cycle += sch->table[i][TBL_BURST];
+      i++;
+
+      if (i < sch->num) {
+        // add wait time for next process
+        if (sch->table[i][TBL_ARRIVAL] < cycle)
+          wait_time += cycle - sch->table[i][TBL_ARRIVAL];
+      }
+    } else {
+      // no process to start
+      if(SCH_VERBOSE)
+        printf("(  %d) No job ready.\n", cycle);
+      cycle++;
+    }
+  }
+  sol->wait_average = (float)wait_time / sch->num;
+  if(SCH_DEBUG)
+    printf("wait_time: %d, avg: %f\n", wait_time, (float)wait_time / sch->num);
+
+  info_sch_solution("sch_fcfs - after run",sol);
   return sol;
 }
 
@@ -97,6 +135,8 @@ sch_solution * sch_sjf(sch_problem *sch) {
 }
 
 void info_sch_problem(char *context, sch_problem *sch) {
+  if(!SCH_DEBUG)
+    return;
   printf("%s: %p contains:\n", context, sch);
   printf("table: %i entries\n",sch->num);
   printf("i | ID | ARRIVAL | BURST\n");
@@ -105,30 +145,48 @@ void info_sch_problem(char *context, sch_problem *sch) {
     for (int i = 0; i < sch->num; i++) {
       printf("%i | %i  |    %i    |  %i   \n",
         i,
-        sch->table[i][0],
-        sch->table[i][1],
-        sch->table[i][2]);
+        sch->table[i][TBL_ID],
+        sch->table[i][TBL_ARRIVAL],
+        sch->table[i][TBL_BURST]);
     }
   }
   printf("\n");
 }
 
 void info_sch_solution(char *context, sch_solution *sol) {
+  if(!SCH_DEBUG)
+    return;
   printf("%s: %p contains:\n", context, sol);
   printf("solution: %i entries\n",sol->num);
-  printf("order\n");
-  printf("------------------------\n");
+  printf("order: ");
   if (sol->num > 0) {
     for (int i = 0; i < sol->num; i++) {
-      printf("%i ,",sol->order[i]);
+      printf("%i ",sol->order[i]);
     }
     printf("\n");
   }
   printf("avg. wait: %f\n\n", sol->wait_average);
 }
 
+void sort_sch_problem_arrival_time(sch_problem *sch) {
+  if(sch->num > 0) {
+    for(int i = 0; i < sch->num; i++) {
+      for(int j = i; j < sch->num; j++) {
+        if(sch->table[i][TBL_ARRIVAL] > sch->table[j][TBL_ARRIVAL]) {
+          sch_table_swap(sch,i,j);
+        }
+      }
+    }
+  }
+}
+
+void sch_table_swap(sch_problem *sch, int i, int j) {
+  int *temp_job = sch->table[j];
+  sch->table[j] = sch->table[i];
+  sch->table[i] = temp_job;
+}
+
 void sch_solution_malloc(sch_solution *sol) {
-  sol->num = 0;
   sol->order = (int*) malloc(0 * sizeof(int));
   sol->wait_average = 0.0;
 }
