@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define SCH_DEBUG 1
 #define SCH_VERBOSE 1
 #define TBL_ID 0
 #define TBL_ARRIVAL 1
@@ -25,6 +24,7 @@ int get_no_of_jobs_waiting(int cycle, int next_job_id, int num, int **table);
 void sch_solution_malloc(sch_solution *sol);
 void queue_push_job(int curr_size, int **table, int *job);
 int* queue_poll_job(int curr_size, int **table);
+void execute_schedule(sch_problem *sch, sch_solution *sol, int sort_by_burst);
 
 /**
   Allocate memory for the table in the scheduling problem structure sch in
@@ -84,34 +84,7 @@ sch_solution * sch_fcfs(sch_problem *sch) {
   sol->num = sch->num;
   sch_solution_malloc(sol);
   
-  sort_sch_problem_asc(sch->num,sch->table,TBL_ARRIVAL);
-
-  int job_id = 0, cycle = 0, wait_time = 0, burst = 0;
-  while(job_id < sch->num) {
-    if (sch->table[job_id][TBL_ARRIVAL] <= cycle) {
-      if (burst == 0) {
-        // start next process
-        if (SCH_VERBOSE)
-          printf("(  %d) Running job %d, arrived at %d, with burst time %d.\n", cycle, sch->table[job_id][TBL_ID], sch->table[job_id][TBL_ARRIVAL], sch->table[job_id][TBL_BURST]);
-
-        burst = sch->table[job_id][TBL_BURST];
-        sol->order[job_id] = sch->table[job_id][TBL_ID];
-        job_id++;
-      }
-    } else {
-      // no process to start
-      if((burst == 0) && SCH_VERBOSE)
-        printf("(  %d) No job ready.\n", cycle);
-    }
-    if (burst > 0)
-      burst--;
-    wait_time += get_no_of_jobs_waiting(cycle, job_id, sch->num, sch->table);
-    cycle++;
-  }
-  if (sch->num > 0)
-    sol->wait_average = (float)wait_time / sch->num;
-  if(SCH_DEBUG)
-    printf("wait_time: %d, avg: %f\n", wait_time, sol->wait_average);
+  execute_schedule(sch,sol,0 /* false */);
 
   return sol;
 }
@@ -132,54 +105,7 @@ sch_solution * sch_sjf(sch_problem *sch) {
   sol->num = sch->num;
   sch_solution_malloc(sol);
   
-  sort_sch_problem_asc(sch->num,sch->table,TBL_ARRIVAL);
-  int queue_size = 0;
-  int** queue = (int**) malloc(sizeof(int*) * sch->num);
-  for (int i = 0; i < sch->num; i++) {
-    queue[i] = (int*) malloc(sizeof(int) * 3);
-  }
-
-  int job_id = 0, order_id = 0, cycle = 0, wait_time = 0, burst = 0;
-  while(order_id < sch->num) {
-    while((job_id < sch->num) && (sch->table[job_id][TBL_ARRIVAL] <= cycle)) {
-      // If another job was received, we add it to the queue.
-      queue_push_job(queue_size,queue,sch->table[job_id]);
-      queue_size++;
-      job_id++;
-    }
-
-    if (burst == 0) {
-      if (queue_size > 0) {
-        // No process currently running, the next can be started.
-        // Sort the queue by burst time
-        sort_sch_problem_asc(queue_size,queue,TBL_BURST);
-
-        int* job = queue_poll_job(queue_size,queue);
-        queue_size--;
-
-        // Select the first Job in the queue to be started.
-        if (SCH_VERBOSE)
-          printf("(  %d) Running job %d, arrived at %d, with burst time %d.\n", 
-            cycle, job[TBL_ID], job[TBL_ARRIVAL], job[TBL_BURST]);
-
-        burst = job[TBL_BURST];
-        sol->order[order_id] = job[TBL_ID];
-        order_id++;
-      } else {
-        if((burst == 0) && SCH_VERBOSE)
-          printf("(  %d) No job ready.\n", cycle);
-      }
-    }
-
-    if (burst > 0)  // if a process is running, we reduce it's running time
-      burst--;
-    wait_time += queue_size;
-    cycle++;
-  }
-  if (sch->num > 0)
-    sol->wait_average = (float)wait_time / sch->num;
-  if(SCH_DEBUG)
-    printf("wait_time: %d, avg: %f\n", wait_time, sol->wait_average);
+  execute_schedule(sch,sol,1 /* true */);
 
   return sol;
 }
@@ -192,7 +118,7 @@ sch_solution * sch_sjf(sch_problem *sch) {
    @param table is the the table containing the processees to be displayed.
  */
 void info_table(char *context, int num, int **table) {
-  if(!SCH_DEBUG)
+  if(!SCH_VERBOSE)
     return;
   printf("%s:\n", context);
   printf("| ID | ARRIVAL | BURST |\n");
@@ -295,4 +221,77 @@ int* queue_poll_job(int curr_size, int **table) {
     table[i-1] = table[i];
   }
   return job;
+}
+
+/**
+   Executes the schedule based on the processes passed in param sch.
+   The average wait time and execution order is stored in the solution param sol.
+   By setting the parameter sort_by_burst to 1, the queue is sorted by burst time 
+   at each start of a new process. If it is left at 0, the queue uses the arrival 
+   time instead.
+
+   @param sch is the problem containing all the processes to schedule
+   @param sol is the solution that will be storing the execution order and avg. wait time
+   @param sort_by_burst is used to use the FCFS or SJF algorithms.
+   
+   @return the oldest job that was added to the queue
+ */
+void execute_schedule(sch_problem *sch, sch_solution *sol, int sort_by_burst) {
+  // Sort the schedule problem by arrival time
+  sort_sch_problem_asc(sch->num,sch->table,TBL_ARRIVAL);
+
+  // Initialize a queue to store all waiting processes
+  int queue_size = 0;
+  int** queue = (int**) malloc(sizeof(int*) * sch->num);
+  for (int i = 0; i < sch->num; i++) {
+    queue[i] = (int*) malloc(sizeof(int) * 3);
+  }
+
+  // Execute the cycles to find out how long each process has to wait.
+  int job_id = 0, order_id = 0, cycle = 0, wait_time = 0, burst = 0;
+  while(order_id < sch->num) {
+    while((job_id < sch->num) && (sch->table[job_id][TBL_ARRIVAL] <= cycle)) {
+      // If another job was received, we add it to the queue.
+      queue_push_job(queue_size,queue,sch->table[job_id]);
+      queue_size++;
+      job_id++;
+    }
+
+    if (burst == 0) {
+      if (queue_size > 0) {
+        // No process currently running, the next can be started.
+        if (sort_by_burst) {
+          // Sort the queue by burst time
+          sort_sch_problem_asc(queue_size,queue,TBL_BURST);
+        }
+
+        // Get the first job in the queue to be started
+        int* job = queue_poll_job(queue_size,queue);
+        queue_size--;
+
+        if (SCH_VERBOSE) {
+          printf("(  %d) Running job %d, arrived at %d, with burst time %d.\n", 
+            cycle, job[TBL_ID], job[TBL_ARRIVAL], job[TBL_BURST]);
+        }
+
+        // Store the burst time as this will be decreased to keep track of how long
+        // the process will be active.
+        burst = job[TBL_BURST];
+        sol->order[order_id] = job[TBL_ID];
+        order_id++;
+      } else {
+        if((burst == 0) && SCH_VERBOSE) {
+          printf("(  %d) No job ready.\n", cycle);
+        }
+      }
+    }
+
+    // The stored burst time is decreased and any waiting processes are added to the wait time.
+    if (burst > 0)
+      burst--;
+    wait_time += queue_size;
+    cycle++;
+  }
+  if (sch->num > 0)
+    sol->wait_average = (float)wait_time / sch->num;
 }
