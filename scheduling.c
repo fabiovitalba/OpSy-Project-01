@@ -9,12 +9,14 @@
 */
 
 #include "scheduling.h"
-
-// TODO: include libraries if needed
+#include <stdio.h>
+#include <stdlib.h>
 
 // TODO: define constants if needed
 
-// TODO: Declare helper functions, if any
+void info_sch_problem(char *context, sch_problem *sch);
+void info_sch_solution(char *context, sch_solution *sol);
+void sch_solution_malloc(sch_solution *sol);
 
 /**
   Allocate memory for the table in the scheduling problem structure sch in
@@ -29,7 +31,11 @@
        in the instance.
 */
 void sch_table_malloc(sch_problem *sch) {
-  // TODO
+  sch->table = (int**)malloc(sizeof(int*) * sch->num);
+  for (int i = 0; i < sch->num; i++) {
+    sch->table[i] = (int*)malloc(sizeof(int) * 3);
+  }
+  info_sch_problem("sch_table_malloc",sch);
 }
 
 /**
@@ -39,7 +45,11 @@ void sch_table_malloc(sch_problem *sch) {
   @param sch the address of the scheduling problem
 */
 void sch_table_free(sch_problem *sch) {
-  // TODO
+  info_sch_problem("sch_table_free",sch);
+  for(int i = 0; i < sch->num; i++) {
+    free(sch->table[i]);
+  }
+  free(sch->table);
 }
 
 /**
@@ -63,6 +73,10 @@ sch_problem * sch_get_scheduling_problem_instance() {
  */
 sch_solution * sch_fcfs(sch_problem *sch) {
   // TODO
+  sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
+  sch_solution_malloc(sol);
+  info_sch_solution("sch_fcfs",sol);
+  return sol;
 }
 
 /**
@@ -76,6 +90,45 @@ sch_solution * sch_fcfs(sch_problem *sch) {
  */
 sch_solution * sch_sjf(sch_problem *sch) {
   // TODO
+  sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
+  sch_solution_malloc(sol);
+  info_sch_solution("sch_sjf",sol);
+  return sol;
 }
 
-// TODO: define helper functions, if any
+void info_sch_problem(char *context, sch_problem *sch) {
+  printf("%s: %p contains:\n", context, sch);
+  printf("table: %i entries\n",sch->num);
+  printf("i | ID | ARRIVAL | BURST\n");
+  printf("------------------------\n");
+  if (sch->num > 0) {
+    for (int i = 0; i < sch->num; i++) {
+      printf("%i | %i  |    %i    |  %i   \n",
+        i,
+        sch->table[i][0],
+        sch->table[i][1],
+        sch->table[i][2]);
+    }
+  }
+  printf("\n");
+}
+
+void info_sch_solution(char *context, sch_solution *sol) {
+  printf("%s: %p contains:\n", context, sol);
+  printf("solution: %i entries\n",sol->num);
+  printf("order\n");
+  printf("------------------------\n");
+  if (sol->num > 0) {
+    for (int i = 0; i < sol->num; i++) {
+      printf("%i ,",sol->order[i]);
+    }
+    printf("\n");
+  }
+  printf("avg. wait: %f\n\n", sol->wait_average);
+}
+
+void sch_solution_malloc(sch_solution *sol) {
+  sol->num = 0;
+  sol->order = (int*) malloc(0 * sizeof(int));
+  sol->wait_average = 0.0;
+}

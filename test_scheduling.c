@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#define VERBOSE 0
+#define VERBOSE 1 //TODO: reset back to 0
 
 #define W_ALGO  3
 #define W_TEST  5
