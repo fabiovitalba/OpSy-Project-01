@@ -20,6 +20,8 @@ void test0();
 void test1();
 void test2();
 void test3();
+void test4();
+void test5();
 
 void manualTest();
 
@@ -29,6 +31,8 @@ int main() {
   test1();
   test2();
   test3();
+  test4();
+  test5();
 
   manualTest();
 }
@@ -251,6 +255,98 @@ void test3() {
   expected_sjf->order[2] = 1;
   expected_sjf->order[3] = 4;  
   expected_sjf->wait_average = 1.5;
+
+  // check (and free memory solutions)
+  check_fcfs(sch, expected_fcfs);
+  check_sjf(sch, expected_sjf);
+
+  // free
+  sch_table_free(sch);
+  free(sch);
+}
+
+void test4() {
+  print_message("Test 4", W_TEST);
+  // scheduling problem instance  
+  sch_problem *sch = (sch_problem*) malloc(sizeof(sch_problem));
+  sch->num = 3;
+  sch_table_malloc(sch);
+  sch->table[0][ID] = 7;
+  sch->table[0][ARRIVAL] = 0;
+  sch->table[0][BURST] = 1;
+  sch->table[1][ID] = 5;
+  sch->table[1][ARRIVAL] = 2;
+  sch->table[1][BURST] = 1;
+  sch->table[2][ID] = 3;
+  sch->table[2][ARRIVAL] = 3;
+  sch->table[2][BURST] = 1;
+  // expected fcfs solution instance
+  sch_solution *expected_fcfs = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_fcfs->num = 3;
+  expected_fcfs->order = (int*) malloc(3 * sizeof(int));
+  expected_fcfs->order[0] = 7;
+  expected_fcfs->order[1] = 5;
+  expected_fcfs->order[2] = 3;
+  expected_fcfs->wait_average = 0.0 / 3;
+  // expected sjf solution instance
+  sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_sjf->num = 3;
+  expected_sjf->order = (int*) malloc(3 * sizeof(int));
+  expected_sjf->order[0] = 7;
+  expected_sjf->order[1] = 5;
+  expected_sjf->order[2] = 3;
+  expected_sjf->wait_average = 0.0 / 3;
+
+  // check (and free memory solutions)
+  check_fcfs(sch, expected_fcfs);
+  check_sjf(sch, expected_sjf);
+
+  // free
+  sch_table_free(sch);
+  free(sch);
+}
+
+void test5() {
+  print_message("Test 5", W_TEST);
+  // scheduling problem instance  
+  sch_problem *sch = (sch_problem*) malloc(sizeof(sch_problem));
+  sch->num = 5;
+  sch_table_malloc(sch);
+  sch->table[0][ID] = 1;
+  sch->table[0][ARRIVAL] = 2;
+  sch->table[0][BURST] = 6;
+  sch->table[1][ID] = 2;
+  sch->table[1][ARRIVAL] = 5;
+  sch->table[1][BURST] = 2;
+  sch->table[2][ID] = 3;
+  sch->table[2][ARRIVAL] = 1;
+  sch->table[2][BURST] = 8;
+  sch->table[3][ID] = 4;
+  sch->table[3][ARRIVAL] = 0;
+  sch->table[3][BURST] = 3;
+  sch->table[4][ID] = 5;
+  sch->table[4][ARRIVAL] = 4;
+  sch->table[4][BURST] = 4;
+  // expected fcfs solution instance
+  sch_solution *expected_fcfs = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_fcfs->num = 5;
+  expected_fcfs->order = (int*) malloc(5 * sizeof(int));
+  expected_fcfs->order[0] = 4;
+  expected_fcfs->order[1] = 3;
+  expected_fcfs->order[2] = 1;
+  expected_fcfs->order[3] = 5;
+  expected_fcfs->order[4] = 2;
+  expected_fcfs->wait_average = 8.0;
+  // expected sjf solution instance
+  sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_sjf->num = 5;
+  expected_sjf->order = (int*) malloc(5 * sizeof(int));
+  expected_sjf->order[0] = 4;
+  expected_sjf->order[1] = 1;
+  expected_sjf->order[2] = 2;
+  expected_sjf->order[3] = 5;
+  expected_sjf->order[4] = 3;
+  expected_sjf->wait_average = 5.2;
 
   // check (and free memory solutions)
   check_fcfs(sch, expected_fcfs);

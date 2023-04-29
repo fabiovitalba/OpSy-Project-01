@@ -119,7 +119,8 @@ sch_problem * sch_get_scheduling_problem_instance() {
    @return the address of the computer scheduling solution
  */
 sch_solution * sch_fcfs(sch_problem *sch) {
-  printf("*********** FCFS\n");
+  if(SCH_VERBOSE)
+    printf("*********** FCFS\n");
   info_table("sch_fcfs",sch->num,sch->table);
 
   sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
@@ -141,7 +142,8 @@ sch_solution * sch_fcfs(sch_problem *sch) {
    @return the address of the computer scheduling solution
  */
 sch_solution * sch_sjf(sch_problem *sch) {
-  printf("*********** SJF\n");
+  if(SCH_VERBOSE)
+    printf("*********** SJF\n");
   info_table("sch_sjf",sch->num,sch->table);
 
   sch_solution *sol = (sch_solution*) malloc(sizeof(sch_solution));
@@ -335,6 +337,8 @@ void execute_schedule(sch_problem *sch, sch_solution *sol, int sort_by_burst) {
     wait_time += queue_size;
     cycle++;
   }
+
+  free(queue);
 
   if (sch->num > 0)
     sol->wait_average = (float)wait_time / sch->num;
