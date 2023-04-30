@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define VERBOSE 1
 
@@ -23,6 +24,10 @@ void test3();
 void test4();
 void test5();
 void test6();
+void test7();
+void test8();
+void test9();
+void test10();
 
 void manualTest();
 
@@ -35,6 +40,10 @@ int main() {
   test4();
   test5();
   test6();
+  test7();
+  test8();
+  test9();
+  test10();
 
   //manualTest();
 }
@@ -80,7 +89,8 @@ int check_order(int a[], int b[], int num) {
 int solution_check_equals(sch_solution a, sch_solution b) {
   if (a.num != b.num ||
       !check_order(a.order, b.order, a.num) ||
-      a.wait_average != b.wait_average) {
+      //a.wait_average != b.wait_average) {
+      (fabsf(a.wait_average - b.wait_average) > 0.00001)) {
     print_message("FAIL", W_FAIL);
     return 0;
   } else {
@@ -395,6 +405,170 @@ void test6() {
   expected_sjf->order[2] = 3;
   expected_sjf->order[3] = 2;  
   expected_sjf->wait_average = 7.0;
+
+  // check (and free memory solutions)
+  check_fcfs(sch, expected_fcfs);
+  check_sjf(sch, expected_sjf);
+
+  // free
+  sch_table_free(sch);
+  free(sch);
+}
+
+void test7() {
+  print_message("Test 7", W_TEST);
+  // scheduling problem instance  
+  sch_problem *sch = (sch_problem*) malloc(sizeof(sch_problem));
+  sch->num = 3;
+  sch_table_malloc(sch);
+  sch->table[0][ID] = 1;
+  sch->table[0][ARRIVAL] = 9;
+  sch->table[0][BURST] = 7;
+  sch->table[1][ID] = 2;
+  sch->table[1][ARRIVAL] = 9;
+  sch->table[1][BURST] = 7;
+  sch->table[2][ID] = 3;
+  sch->table[2][ARRIVAL] = 6;
+  sch->table[2][BURST] = 0;
+  // expected fcfs solution instance
+  sch_solution *expected_fcfs = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_fcfs->num = 3;
+  expected_fcfs->order = (int*) malloc(3 * sizeof(int));
+  expected_fcfs->order[0] = 3;
+  expected_fcfs->order[1] = 1;
+  expected_fcfs->order[2] = 2;
+  expected_fcfs->wait_average = 2.333333;
+  // expected sjf solution instance
+  sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_sjf->num = 3;
+  expected_sjf->order = (int*) malloc(3 * sizeof(int));
+  expected_sjf->order[0] = 3;
+  expected_sjf->order[1] = 1;
+  expected_sjf->order[2] = 2;
+  expected_sjf->wait_average = 2.333333;
+
+  // check (and free memory solutions)
+  check_fcfs(sch, expected_fcfs);
+  check_sjf(sch, expected_sjf);
+
+  // free
+  sch_table_free(sch);
+  free(sch);
+}
+
+void test8() {
+  print_message("Test 8", W_TEST);
+  // scheduling problem instance  
+  sch_problem *sch = (sch_problem*) malloc(sizeof(sch_problem));
+  sch->num = 3;
+  sch_table_malloc(sch);
+  sch->table[0][ID] = 1;
+  sch->table[0][ARRIVAL] = 9;
+  sch->table[0][BURST] = 5;
+  sch->table[1][ID] = 2;
+  sch->table[1][ARRIVAL] = 7;
+  sch->table[1][BURST] = 0;
+  sch->table[2][ID] = 3;
+  sch->table[2][ARRIVAL] = 5;
+  sch->table[2][BURST] = 5;
+  // expected fcfs solution instance
+  sch_solution *expected_fcfs = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_fcfs->num = 3;
+  expected_fcfs->order = (int*) malloc(3 * sizeof(int));
+  expected_fcfs->order[0] = 3;
+  expected_fcfs->order[1] = 2;
+  expected_fcfs->order[2] = 1;
+  expected_fcfs->wait_average = 1.66667;
+  // expected sjf solution instance
+  sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_sjf->num = 3;
+  expected_sjf->order = (int*) malloc(3 * sizeof(int));
+  expected_sjf->order[0] = 3;
+  expected_sjf->order[1] = 2;
+  expected_sjf->order[2] = 1;
+  expected_sjf->wait_average = 1.66667;
+
+  // check (and free memory solutions)
+  check_fcfs(sch, expected_fcfs);
+  check_sjf(sch, expected_sjf);
+
+  // free
+  sch_table_free(sch);
+  free(sch);
+}
+
+void test9() {
+  print_message("Test 9", W_TEST);
+  // scheduling problem instance  
+  sch_problem *sch = (sch_problem*) malloc(sizeof(sch_problem));
+  sch->num = 3;
+  sch_table_malloc(sch);
+  sch->table[0][ID] = 1;
+  sch->table[0][ARRIVAL] = 10;
+  sch->table[0][BURST] = 2;
+  sch->table[1][ID] = 2;
+  sch->table[1][ARRIVAL] = 6;
+  sch->table[1][BURST] = 2;
+  sch->table[2][ID] = 3;
+  sch->table[2][ARRIVAL] = 5;
+  sch->table[2][BURST] = 6;
+  // expected fcfs solution instance
+  sch_solution *expected_fcfs = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_fcfs->num = 3;
+  expected_fcfs->order = (int*) malloc(3 * sizeof(int));
+  expected_fcfs->order[0] = 3;
+  expected_fcfs->order[1] = 2;
+  expected_fcfs->order[2] = 1;
+  expected_fcfs->wait_average = 2.666667;
+  // expected sjf solution instance
+  sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_sjf->num = 3;
+  expected_sjf->order = (int*) malloc(3 * sizeof(int));
+  expected_sjf->order[0] = 3;
+  expected_sjf->order[1] = 1;
+  expected_sjf->order[2] = 2;
+  expected_sjf->wait_average = 2.666667;
+
+  // check (and free memory solutions)
+  check_fcfs(sch, expected_fcfs);
+  check_sjf(sch, expected_sjf);
+
+  // free
+  sch_table_free(sch);
+  free(sch);
+}
+
+void test10() {
+  print_message("Test 10", W_TEST);
+  // scheduling problem instance  
+  sch_problem *sch = (sch_problem*) malloc(sizeof(sch_problem));
+  sch->num = 3;
+  sch_table_malloc(sch);
+  sch->table[0][ID] = 1;
+  sch->table[0][ARRIVAL] = 8;
+  sch->table[0][BURST] = 0;
+  sch->table[1][ID] = 2;
+  sch->table[1][ARRIVAL] = 7;
+  sch->table[1][BURST] = 7;
+  sch->table[2][ID] = 3;
+  sch->table[2][ARRIVAL] = 8;
+  sch->table[2][BURST] = 6;
+  // expected fcfs solution instance
+  sch_solution *expected_fcfs = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_fcfs->num = 3;
+  expected_fcfs->order = (int*) malloc(3 * sizeof(int));
+  expected_fcfs->order[0] = 2;
+  expected_fcfs->order[1] = 1;
+  expected_fcfs->order[2] = 3;
+  expected_fcfs->wait_average = 4.333333;
+  // expected sjf solution instance
+  sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_sjf->num = 3;
+  expected_sjf->order = (int*) malloc(3 * sizeof(int));
+  expected_sjf->order[0] = 2;
+  expected_sjf->order[1] = 1;
+  expected_sjf->order[2] = 3;
+  expected_sjf->wait_average = 4.333333;
 
   // check (and free memory solutions)
   check_fcfs(sch, expected_fcfs);
