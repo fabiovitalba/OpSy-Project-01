@@ -182,6 +182,7 @@ void info_table(char *context, int num, int **table) {
 /**
    Sorts the scheduling problem based on the column passed in sort_by.
    The table is sorted in ascending, starting from the lowest value first. 
+   If the sorting value is equal, the entries are sorted by Process ID instead.
 
    @param num the number of processes in the parameter table.
    @param table the table of processes to sort.
@@ -193,6 +194,12 @@ void sort_sch_problem_asc(int num, int **table, int sort_by) {
       for(int j = i; j < num; j++) {
         if(table[i][sort_by] > table[j][sort_by]) {
           sch_table_swap(table,i,j);
+        } else {
+          if (table[i][sort_by] == table[j][sort_by]) {
+            if (table[i][TBL_ID] > table[j][TBL_ID]) {
+              sch_table_swap(table,i,j);
+            }
+          }
         }
       }
     }
@@ -237,7 +244,7 @@ int get_no_of_jobs_waiting(int cycle, int next_job_id, int num, int **table) {
 }
 
 void sch_solution_malloc(sch_solution *sol) {
-  sol->order = (int*) malloc(0 * sizeof(int));
+  sol->order = (int*) malloc(sol->num * sizeof(int));
   sol->wait_average = 0.0;
 }
 
