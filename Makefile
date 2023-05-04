@@ -1,4 +1,4 @@
 all:
-	clang -o testsched test_scheduling.c scheduling.c
+	clang -g -o testsched test_scheduling.c scheduling.c
 clean:
 	rm -i testsched

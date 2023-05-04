@@ -299,7 +299,7 @@ void test4() {
   expected_fcfs->order[0] = 7;
   expected_fcfs->order[1] = 5;
   expected_fcfs->order[2] = 3;
-  expected_fcfs->wait_average = 0.0 / 3;
+  expected_fcfs->wait_average = 0.0;
   // expected sjf solution instance
   sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
   expected_sjf->num = 3;
@@ -307,7 +307,7 @@ void test4() {
   expected_sjf->order[0] = 7;
   expected_sjf->order[1] = 5;
   expected_sjf->order[2] = 3;
-  expected_sjf->wait_average = 0.0 / 3;
+  expected_sjf->wait_average = 0.0;
 
   // check (and free memory solutions)
   check_fcfs(sch, expected_fcfs);
@@ -586,4 +586,11 @@ void manualTest() {
   print_solution(*sol_fcfs);
   sch_solution *sol_sjf = sch_sjf(sch);
   print_solution(*sol_sjf);
+
+  sch_table_free(sch);
+  free(sch);
+  free(sol_fcfs->order);
+  free(sol_fcfs);  
+  free(sol_sjf->order);
+  free(sol_sjf);  
 }
