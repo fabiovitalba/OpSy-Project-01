@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define SCH_VERBOSE 1
+#define SCH_VERBOSE 0
 #define TBL_ID 0
 #define TBL_ARRIVAL 1
 #define TBL_BURST 2
@@ -190,7 +190,7 @@ void info_table(char *context, int num, int **table) {
  */
 void sort_sch_problem_asc(int num, int **table, int sort_by) {
   if(num > 0) {
-    for(int i = 0; i < num; i++) {
+    for(int i = 0; i < num - 1; i++) {
       for(int j = i; j < num; j++) {
         if(table[i][sort_by] > table[j][sort_by]) {
           sch_table_swap(table,i,j);
@@ -267,7 +267,7 @@ void queue_push_job(int curr_size, int **table, int *job) {
    
    @return the oldest job that was added to the queue
  */
-int* queue_poll_job(int curr_size, int **table) {
+int * queue_poll_job(int curr_size, int **table) {
   int *job = table[0];
   for(int i = 1; i < curr_size; i++) {
     table[i-1] = table[i];
@@ -295,9 +295,6 @@ void execute_schedule(sch_problem *sch, sch_solution *sol, int sort_by_burst) {
   // Initialize a queue to store all waiting processes
   int queue_size = 0;
   int** queue = (int**) malloc(sizeof(int*) * sch->num);
-  for (int i = 0; i < sch->num; i++) {
-    queue[i] = (int*) malloc(sizeof(int) * 3);
-  }
 
   // Execute the cycles to find out how long each process has to wait.
   int job_id = 0, order_id = 0, cycle = 0, wait_time = 0, burst = 0;

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define VERBOSE 1
+#define VERBOSE 0
 
 #define W_ALGO  3
 #define W_TEST  5
