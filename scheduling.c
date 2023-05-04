@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define SCH_VERBOSE 0
+#define SCH_VERBOSE 1
 #define TBL_ID 0
 #define TBL_ARRIVAL 1
 #define TBL_BURST 2
@@ -297,7 +297,8 @@ void execute_schedule(sch_problem *sch, sch_solution *sol, int sort_by_burst) {
   int** queue = (int**) malloc(sizeof(int*) * sch->num);
 
   // Execute the cycles to find out how long each process has to wait.
-  int job_id = 0, order_id = 0, cycle = 0, wait_time = 0, burst = 0;
+  int job_id = 0, order_id = 0, cycle = 0, burst = 0;
+  float wait_time = 0;
   while(order_id < sch->num) {
     while((job_id < sch->num) && (sch->table[job_id][TBL_ARRIVAL] <= cycle)) {
       // If another job was received, we add it to the queue.
@@ -344,6 +345,7 @@ void execute_schedule(sch_problem *sch, sch_solution *sol, int sort_by_burst) {
 
   free(queue);
 
-  if (sch->num > 0)
-    sol->wait_average = (float)wait_time / sch->num;
+  if (sch->num > 0) {
+    sol->wait_average = wait_time / sch->num;
+  }
 }
