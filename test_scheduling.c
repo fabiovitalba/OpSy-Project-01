@@ -93,8 +93,8 @@ int check_order(int a[], int b[], int num) {
 int solution_check_equals(sch_solution a, sch_solution b) {
   if (a.num != b.num ||
       !check_order(a.order, b.order, a.num) ||
-      //a.wait_average != b.wait_average) {
-      (fabsf(a.wait_average - b.wait_average) > 0.00001)) {
+      a.wait_average != b.wait_average) {
+      //(fabsf(a.wait_average - b.wait_average) > 0.00001)) {
     print_message("FAIL", W_FAIL);
     return 0;
   } else {
@@ -441,7 +441,7 @@ void test7() {
   expected_fcfs->order[0] = 3;
   expected_fcfs->order[1] = 1;
   expected_fcfs->order[2] = 2;
-  expected_fcfs->wait_average = 2.333333;
+  expected_fcfs->wait_average = 7.0/3;
   // expected sjf solution instance
   sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
   expected_sjf->num = 3;
@@ -449,7 +449,7 @@ void test7() {
   expected_sjf->order[0] = 3;
   expected_sjf->order[1] = 1;
   expected_sjf->order[2] = 2;
-  expected_sjf->wait_average = 2.333333;
+  expected_sjf->wait_average = 7.0/3;
 
   // check (and free memory solutions)
   check_fcfs(sch, expected_fcfs);
@@ -482,7 +482,7 @@ void test8() {
   expected_fcfs->order[0] = 3;
   expected_fcfs->order[1] = 2;
   expected_fcfs->order[2] = 1;
-  expected_fcfs->wait_average = 1.66667;
+  expected_fcfs->wait_average = 4.0/3;
   // expected sjf solution instance
   sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
   expected_sjf->num = 3;
@@ -490,7 +490,7 @@ void test8() {
   expected_sjf->order[0] = 3;
   expected_sjf->order[1] = 2;
   expected_sjf->order[2] = 1;
-  expected_sjf->wait_average = 1.66667;
+  expected_sjf->wait_average = 4.0/3;
 
   // check (and free memory solutions)
   check_fcfs(sch, expected_fcfs);
@@ -523,7 +523,7 @@ void test9() {
   expected_fcfs->order[0] = 3;
   expected_fcfs->order[1] = 2;
   expected_fcfs->order[2] = 1;
-  expected_fcfs->wait_average = 2.666667;
+  expected_fcfs->wait_average = 8.0/3;
   // expected sjf solution instance
   sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
   expected_sjf->num = 3;
@@ -531,7 +531,7 @@ void test9() {
   expected_sjf->order[0] = 3;
   expected_sjf->order[1] = 1;
   expected_sjf->order[2] = 2;
-  expected_sjf->wait_average = 2.666667;
+  expected_sjf->wait_average = 8.0/3;
 
   // check (and free memory solutions)
   check_fcfs(sch, expected_fcfs);
@@ -564,7 +564,7 @@ void test10() {
   expected_fcfs->order[0] = 2;
   expected_fcfs->order[1] = 1;
   expected_fcfs->order[2] = 3;
-  expected_fcfs->wait_average = 4.333333;
+  expected_fcfs->wait_average = 4.0;
   // expected sjf solution instance
   sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
   expected_sjf->num = 3;
@@ -572,7 +572,7 @@ void test10() {
   expected_sjf->order[0] = 2;
   expected_sjf->order[1] = 1;
   expected_sjf->order[2] = 3;
-  expected_sjf->wait_average = 4.333333;
+  expected_sjf->wait_average = 4.0;
 
   // check (and free memory solutions)
   check_fcfs(sch, expected_fcfs);
@@ -641,7 +641,7 @@ void test12() {
   expected_fcfs->order[0] = 2;
   expected_fcfs->order[1] = 3;
   expected_fcfs->order[2] = 1;
-  expected_fcfs->wait_average = 0.5;
+  expected_fcfs->wait_average = 2.0/3;
   // expected sjf solution instance
   sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
   expected_sjf->num = 3;
@@ -649,7 +649,7 @@ void test12() {
   expected_sjf->order[0] = 2;
   expected_sjf->order[1] = 3;
   expected_sjf->order[2] = 1;
-  expected_sjf->wait_average = 0.5;
+  expected_sjf->wait_average = 2.0/3;
 
   // check (and free memory solutions)
   check_fcfs(sch, expected_fcfs);
