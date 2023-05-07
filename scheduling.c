@@ -337,10 +337,17 @@ void execute_schedule(sch_problem *sch, sch_solution *sol, int sort_by_burst) {
     }
 
     // The stored burst time is decreased and any waiting processes are added to the wait time.
-    if (burst > 0)
+    // For Processes with BURST=0 the cycle and wait times are not incremented.
+    if (burst > 0) {
+      // We're actively working on a task
       burst--;
-    wait_time += queue_size;
-    cycle++;
+      wait_time += queue_size;
+      cycle++;
+    } else {
+      if (queue_size == 0)
+        // No tasks are being worked on
+        cycle++;
+    }
   }
 
   free(queue);

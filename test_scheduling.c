@@ -29,6 +29,7 @@ void test8();
 void test9();
 void test10();
 void test11();
+void test12();
 
 void manualTest();
 
@@ -46,6 +47,7 @@ int main() {
   test9();
   test10();
   test11();
+  test12();
 
   //manualTest();
 }
@@ -599,13 +601,54 @@ void test11() {
   expected_fcfs->order = (int*) malloc(2 * sizeof(int));
   expected_fcfs->order[0] = 1;
   expected_fcfs->order[1] = 2;
-  expected_fcfs->wait_average = 0.5;
+  expected_fcfs->wait_average = 0.0;
   // expected sjf solution instance
   sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
   expected_sjf->num = 2;
   expected_sjf->order = (int*) malloc(2 * sizeof(int));
   expected_sjf->order[0] = 1;
   expected_sjf->order[1] = 2;
+  expected_sjf->wait_average = 0.0;
+
+  // check (and free memory solutions)
+  check_fcfs(sch, expected_fcfs);
+  check_sjf(sch, expected_sjf);
+
+  // free
+  sch_table_free(sch);
+  free(sch);
+}
+
+void test12() {
+  print_message("Test 12", W_TEST);
+  // scheduling problem instance  
+  sch_problem *sch = (sch_problem*) malloc(sizeof(sch_problem));
+  sch->num = 3;
+  sch_table_malloc(sch);
+  sch->table[0][ID] = 1;
+  sch->table[0][ARRIVAL] = 5;
+  sch->table[0][BURST] = 3;
+  sch->table[1][ID] = 2;
+  sch->table[1][ARRIVAL] = 2;
+  sch->table[1][BURST] = 0;
+  sch->table[2][ID] = 3;
+  sch->table[2][ARRIVAL] = 2;
+  sch->table[2][BURST] = 5;
+  // expected fcfs solution instance
+  sch_solution *expected_fcfs = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_fcfs->num = 3;
+  expected_fcfs->order = (int*) malloc(3 * sizeof(int));
+  expected_fcfs->order[0] = 2;
+  expected_fcfs->order[1] = 3;
+  expected_fcfs->order[2] = 1;
+  expected_fcfs->wait_average = 0.5;
+  // expected sjf solution instance
+  sch_solution *expected_sjf = (sch_solution*) malloc(sizeof(sch_solution));
+  expected_sjf->num = 3;
+  expected_sjf->order = (int*) malloc(3 * sizeof(int));
+  expected_sjf->order[0] = 2;
+  expected_sjf->order[1] = 3;
+  expected_sjf->order[2] = 1;
   expected_sjf->wait_average = 0.5;
 
   // check (and free memory solutions)
